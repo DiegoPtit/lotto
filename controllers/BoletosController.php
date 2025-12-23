@@ -28,6 +28,7 @@ class BoletosController extends Controller
         return [
             'contentNegotiator' => [
                 'class' => ContentNegotiator::class,
+                'except' => ['status'], // Excluir acción status para que devuelva HTML
                 'formats' => [
                     'application/json' => Response::FORMAT_JSON,
                 ],
@@ -302,6 +303,16 @@ class BoletosController extends Controller
                 'transaction_id' => $pago->transaction_id,
             ]);
 
+            // 7. Enviar correo de notificación al jugador
+            if ($jugador->correo) {
+                try {
+                    $this->enviarCorreoBoletoEnProceso($boleto, $rifa, $numerosGenerados);
+                } catch (\Exception $e) {
+                    // Error al enviar correo, pero no detenemos el proceso
+                    Yii::error('Error al enviar correo de notificación: ' . $e->getMessage(), 'boletos');
+                }
+            }
+
             $transaction->commit();
 
             return [
@@ -439,6 +450,91 @@ class BoletosController extends Controller
             $audit->save();
         } catch (\Exception $e) {
             Yii::error("Error en audit log: " . $e->getMessage(), 'audit');
+        }
+    }
+
+    /**
+     * Muestra el estado de un boleto específico
+     * @param int $id ID del boleto
+     * @return string
+     */
+    public function actionStatus($id)
+    {
+        $boleto = Boletos::findOne(['id' => $id, 'is_deleted' => 0]);
+
+        if (!$boleto) {
+            throw new \yii\web\NotFoundHttpException('El boleto solicitado no existe.');
+        }
+
+        // Cargar relaciones necesarias
+        $boleto->refresh();
+        $rifa = $boleto->rifa;
+        $jugador = $boleto->jugador;
+
+        // Obtener números jugados
+        $boletoNumeros = BoletoNumeros::find()
+            ->where(['id_boleto' => $boleto->id, 'is_deleted' => 0])
+            ->orderBy(['numero' => SORT_ASC])
+            ->all();
+
+        $numeros = [];
+        foreach ($boletoNumeros as $bn) {
+            $numeros[] = $bn->numero;
+        }
+
+        return $this->render('status', [
+            'boleto' => $boleto,
+            'rifa' => $rifa,
+            'numeros' => $numeros,
+        ]);
+    }
+
+    /**
+     * Envía correo de notificación al jugador cuando el boleto está en proceso
+     * @param Boletos $boleto
+     * @param Rifas $rifa
+     * @param array $numeros
+     * @return bool
+     */
+    private function enviarCorreoBoletoEnProceso($boleto, $rifa, $numeros)
+    {
+        $jugador = $boleto->jugador;
+
+        if (!$jugador || !$jugador->correo) {
+            Yii::warning("No se puede enviar correo: jugador sin email para boleto {$boleto->id}", 'boletos');
+            return false;
+        }
+
+        // Generar URL absoluta para ver el estado del boleto
+        $statusUrl = Yii::$app->urlManager->createAbsoluteUrl(['boletos/status', 'id' => $boleto->id]);
+
+        try {
+            $sent = Yii::$app->mailer->compose('boleto-processing', [
+                'boleto' => $boleto,
+                'rifa' => $rifa,
+                'numeros' => $numeros,
+                'statusUrl' => $statusUrl,
+            ])
+                ->setFrom([Yii::$app->params['adminEmail'] => Yii::$app->name])
+                ->setTo($jugador->correo)
+                ->setSubject('Tu boleto está en proceso - ' . $rifa->titulo)
+                ->send();
+
+            if ($sent) {
+                Yii::info("Correo de procesamiento enviado a {$jugador->correo} para boleto {$boleto->codigo}", 'boletos');
+
+                $this->logAudit('email_sent', 'boletos', $boleto->id, [
+                    'email' => $jugador->correo,
+                    'tipo' => 'boleto_processing',
+                ]);
+            } else {
+                Yii::warning("Fallo al enviar correo a {$jugador->correo} para boleto {$boleto->codigo}", 'boletos');
+            }
+
+            return $sent;
+        } catch (\Exception $e) {
+            Yii::error("Excepción al enviar correo: " . $e->getMessage(), 'boletos');
+            throw $e;
         }
     }
 }

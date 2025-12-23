@@ -54,7 +54,7 @@ class PanelController extends Controller
 
         // Obtener estado filtrado (por defecto: activa)
         $estadoFiltro = Yii::$app->request->get('estado', \app\models\Rifas::ESTADO_ACTIVA);
-        
+
         // Validar que el estado sea válido
         $estadosValidos = [
             \app\models\Rifas::ESTADO_ACTIVA,
@@ -62,7 +62,7 @@ class PanelController extends Controller
             \app\models\Rifas::ESTADO_SORTEADA,
             \app\models\Rifas::ESTADO_CANCELADA,
         ];
-        
+
         if (!in_array($estadoFiltro, $estadosValidos)) {
             $estadoFiltro = \app\models\Rifas::ESTADO_ACTIVA;
         }
@@ -308,6 +308,16 @@ class PanelController extends Controller
                         ['id_boleto' => $id, 'is_deleted' => 0]
                     );
                     $boleto->setEstadoToPagado();
+
+                    // Enviar correo de confirmación al jugador
+                    if ($boleto->jugador && $boleto->jugador->correo) {
+                        try {
+                            $this->enviarCorreoBoletoConfirmado($boleto);
+                        } catch (\Exception $e) {
+                            // Log error but don't fail the transaction
+                            Yii::error('Error al enviar correo de confirmación: ' . $e->getMessage(), 'panel');
+                        }
+                    }
                     break;
 
                 case 'ganador':
@@ -492,5 +502,61 @@ class PanelController extends Controller
         return $this->render('/boletos/update', [
             'id' => $id
         ]);
+    }
+
+    /**
+     * Envía correo de confirmación al jugador cuando el pago es validado
+     * @param \app\models\Boletos $boleto
+     * @return bool
+     */
+    private function enviarCorreoBoletoConfirmado($boleto)
+    {
+        $jugador = $boleto->jugador;
+
+        if (!$jugador || !$jugador->correo) {
+            Yii::warning("No se puede enviar correo: jugador sin email para boleto {$boleto->id}", 'panel');
+            return false;
+        }
+
+        // Cargar rifa
+        $rifa = $boleto->rifa;
+
+        // Obtener números jugados
+        $boletoNumeros = \app\models\BoletoNumeros::find()
+            ->where(['id_boleto' => $boleto->id, 'is_deleted' => 0])
+            ->orderBy(['numero' => SORT_ASC])
+            ->all();
+
+        $numeros = [];
+        foreach ($boletoNumeros as $bn) {
+            $numeros[] = $bn->numero;
+        }
+
+        // Generar URL absoluta para ver el estado del boleto
+        $statusUrl = Yii::$app->urlManager->createAbsoluteUrl(['boletos/status', 'id' => $boleto->id]);
+
+        try {
+            $sent = Yii::$app->mailer->compose('boleto-confirmed', [
+                'boleto' => $boleto,
+                'rifa' => $rifa,
+                'numeros' => $numeros,
+                'statusUrl' => $statusUrl,
+            ])
+                ->setFrom([Yii::$app->params['adminEmail'] => Yii::$app->name])
+                ->setTo($jugador->correo)
+                ->setSubject('¡Tu pago ha sido confirmado! - ' . $rifa->titulo)
+                ->send();
+
+            if ($sent) {
+                Yii::info("Correo de confirmación enviado a {$jugador->correo} para boleto {$boleto->codigo}", 'panel');
+            } else {
+                Yii::warning("Fallo al enviar correo de confirmación a {$jugador->correo} para boleto {$boleto->codigo}", 'panel');
+            }
+
+            return $sent;
+        } catch (\Exception $e) {
+            Yii::error("Excepción al enviar correo de confirmación: " . $e->getMessage(), 'panel');
+            throw $e;
+        }
     }
 }
