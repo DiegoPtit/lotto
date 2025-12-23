@@ -42,14 +42,63 @@ class SignupForm extends Model
             return false;
         }
 
+        // Ensure default roles exist
+        $this->ensureDefaultRoles();
+
         $user = new Usuarios();
         $user->nombre = 'Admin Temp'; // Placeholder name as per request "simplemente correo y contraseña"
         $user->correo = $this->correo;
-        $user->rol_id = 1;
+        $user->rol_id = 1; // Admin role
         $user->setPassword($this->password);
         $user->created_at = date('Y-m-d H:i:s');
         $user->is_deleted = 0;
 
-        return $user->save();
+        if (!$user->save()) {
+            // Log the validation errors for debugging
+            Yii::error('Usuario validation errors: ' . json_encode($user->errors), __METHOD__);
+
+            // Transfer validation errors to this form model
+            foreach ($user->errors as $attribute => $errors) {
+                foreach ($errors as $error) {
+                    $this->addError('correo', $error);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Ensures that default roles exist in the database
+     */
+    private function ensureDefaultRoles()
+    {
+        $transaction = Yii::$app->db->beginTransaction();
+        try {
+            // Check if role 1 (Admin) exists
+            $adminRole = Roles::findOne(1);
+            if (!$adminRole) {
+                $adminRole = new Roles();
+                $adminRole->id = 1;
+                $adminRole->nombre = 'Administrador';
+                $adminRole->save(false); // Skip validation to force insert
+            }
+
+            // Check if role 2 (User) exists (for future use)
+            $userRole = Roles::findOne(2);
+            if (!$userRole) {
+                $userRole = new Roles();
+                $userRole->id = 2;
+                $userRole->nombre = 'Usuario';
+                $userRole->save(false);
+            }
+
+            $transaction->commit();
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            Yii::error('Error creating default roles: ' . $e->getMessage(), __METHOD__);
+        }
     }
 }
