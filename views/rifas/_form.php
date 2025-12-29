@@ -672,73 +672,35 @@ $canEditMaxNumeros = !$isUpdate;
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label for="fecha_inicio">Fecha de Inicio</label>
-                            <?php 
-                            $fechaInicioDate = $model->fecha_inicio ? date('Y-m-d', strtotime($model->fecha_inicio)) : '';
-                            $fechaInicioHour = $model->fecha_inicio ? date('h', strtotime($model->fecha_inicio)) : '12';
-                            $fechaInicioMinute = $model->fecha_inicio ? date('i', strtotime($model->fecha_inicio)) : '00';
-                            $fechaInicioAmPm = $model->fecha_inicio ? date('A', strtotime($model->fecha_inicio)) : 'AM';
-                            ?>
-                            <input type="date" 
-                                   name="fecha_inicio_date" 
-                                   id="fecha_inicio_date" 
-                                   value="<?= $fechaInicioDate ?>"
-                                   <?= $canEditFechaInicio ? '' : 'disabled' ?>>
-                            <div class="time-picker-row">
-                                <span class="time-label">a las</span>
-                                <select name="fecha_inicio_hour" id="fecha_inicio_hour" <?= $canEditFechaInicio ? '' : 'disabled' ?>>
-                                    <?php for ($h = 1; $h <= 12; $h++): ?>
-                                        <option value="<?= sprintf('%02d', $h) ?>" <?= $fechaInicioHour == sprintf('%02d', $h) ? 'selected' : '' ?>><?= sprintf('%02d', $h) ?></option>
-                                    <?php endfor; ?>
-                                </select>
-                                <span class="time-separator">:</span>
-                                <select name="fecha_inicio_minute" id="fecha_inicio_minute" <?= $canEditFechaInicio ? '' : 'disabled' ?>>
-                                    <?php for ($m = 0; $m < 60; $m += 5): ?>
-                                        <option value="<?= sprintf('%02d', $m) ?>" <?= $fechaInicioMinute == sprintf('%02d', $m) ? 'selected' : '' ?>><?= sprintf('%02d', $m) ?></option>
-                                    <?php endfor; ?>
-                                </select>
-                                <select name="fecha_inicio_ampm" id="fecha_inicio_ampm" <?= $canEditFechaInicio ? '' : 'disabled' ?>>
-                                    <option value="AM" <?= $fechaInicioAmPm == 'AM' ? 'selected' : '' ?>>AM</option>
-                                    <option value="PM" <?= $fechaInicioAmPm == 'PM' ? 'selected' : '' ?>>PM</option>
-                                </select>
-                            </div>
-                            <?php if (!$canEditFechaInicio): ?>
-                                <input type="hidden" name="Rifas[fecha_inicio]" value="<?= $model->fecha_inicio ?>">
-                                <div class="form-hint">Ya pasó la fecha de inicio</div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="form-field">
-                            <label for="fecha_fin">Fecha de Finalización</label>
-                            <?php 
-                            $fechaFinDate = $model->fecha_fin ? date('Y-m-d', strtotime($model->fecha_fin)) : '';
-                            $fechaFinHour = $model->fecha_fin ? date('h', strtotime($model->fecha_fin)) : '11';
-                            $fechaFinMinute = $model->fecha_fin ? date('i', strtotime($model->fecha_fin)) : '59';
-                            $fechaFinAmPm = $model->fecha_fin ? date('A', strtotime($model->fecha_fin)) : 'PM';
-                            ?>
-                            <input type="date" 
-                                   name="fecha_fin_date" 
-                                   id="fecha_fin_date" 
-                                   value="<?= $fechaFinDate ?>">
-                            <div class="time-picker-row">
-                                <span class="time-label">a las</span>
-                                <select name="fecha_fin_hour" id="fecha_fin_hour">
-                                    <?php for ($h = 1; $h <= 12; $h++): ?>
-                                        <option value="<?= sprintf('%02d', $h) ?>" <?= $fechaFinHour == sprintf('%02d', $h) ? 'selected' : '' ?>><?= sprintf('%02d', $h) ?></option>
-                                    <?php endfor; ?>
-                                </select>
-                                <span class="time-separator">:</span>
-                                <select name="fecha_fin_minute" id="fecha_fin_minute">
-                                    <?php for ($m = 0; $m < 60; $m += 5): ?>
-                                        <option value="<?= sprintf('%02d', $m) ?>" <?= $fechaFinMinute == sprintf('%02d', $m) ? 'selected' : '' ?>><?= sprintf('%02d', $m) ?></option>
-                                    <?php endfor; ?>
-                                </select>
-                                <select name="fecha_fin_ampm" id="fecha_fin_ampm">
-                                    <option value="AM" <?= $fechaFinAmPm == 'AM' ? 'selected' : '' ?>>AM</option>
-                                    <option value="PM" <?= $fechaFinAmPm == 'PM' ? 'selected' : '' ?>>PM</option>
-                                </select>
-                            </div>
+                    <div class="form-field">
+                        <label for="fecha_fin">Fecha de Finalización</label>
+                        <?php 
+                        $fechaFinDate = $model->fecha_fin ? date('Y-m-d', strtotime($model->fecha_fin)) : '';
+                        $fechaFinHour = $model->fecha_fin ? date('h', strtotime($model->fecha_fin)) : '11';
+                        $fechaFinMinute = $model->fecha_fin ? date('i', strtotime($model->fecha_fin)) : '59';
+                        $fechaFinAmPm = $model->fecha_fin ? date('A', strtotime($model->fecha_fin)) : 'PM';
+                        ?>
+                        <input type="date" 
+                               name="fecha_fin_date" 
+                               id="fecha_fin_date" 
+                               value="<?= $fechaFinDate ?>">
+                        <div class="time-picker-row">
+                            <span class="time-label">a las</span>
+                            <select name="fecha_fin_hour" id="fecha_fin_hour">
+                                <?php for ($h = 1; $h <= 12; $h++): ?>
+                                    <option value="<?= sprintf('%02d', $h) ?>" <?= $fechaFinHour == sprintf('%02d', $h) ? 'selected' : '' ?>><?= sprintf('%02d', $h) ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span class="time-separator">:</span>
+                            <select name="fecha_fin_minute" id="fecha_fin_minute">
+                                <?php for ($m = 0; $m < 60; $m += 5): ?>
+                                    <option value="<?= sprintf('%02d', $m) ?>" <?= $fechaFinMinute == sprintf('%02d', $m) ? 'selected' : '' ?>><?= sprintf('%02d', $m) ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <select name="fecha_fin_ampm" id="fecha_fin_ampm">
+                                <option value="AM" <?= $fechaFinAmPm == 'AM' ? 'selected' : '' ?>>AM</option>
+                                <option value="PM" <?= $fechaFinAmPm == 'PM' ? 'selected' : '' ?>>PM</option>
+                            </select>
                         </div>
                     </div>
 

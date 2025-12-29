@@ -31,10 +31,115 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.
 <head>
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
+    <style>
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .toast-item {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            padding: 1rem 2.5rem 1rem 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 350px;
+            animation: toastSlideIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            pointer-events: auto;
+            cursor: default;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-item.fade-out {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast-message {
+            color: #856404;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #856404;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px 8px;
+            line-height: 1;
+            z-index: 10;
+        }
+
+        .toast-close:hover {
+            color: #533f03;
+        }
+
+        .toast-link {
+            background: #ffc107;
+            color: #212529;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+            transition: all 0.2s ease;
+            align-self: flex-start;
+            z-index: 10;
+            position: relative;
+        }
+
+        .toast-link:hover {
+            background: #e0a800;
+            color: #212529;
+        }
+    </style>
 </head>
 
 <body class="d-flex flex-column h-100">
     <?php $this->beginBody() ?>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- Sidebar Overlay -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -125,6 +230,50 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.
                 });
             });
         });
+    </script>
+
+    <!-- Toast Notification Script -->
+    <script>
+        (function () {
+            const apiNewBoletosUrl = '<?= \yii\helpers\Url::to(['panel/api-new-boletos']) ?>';
+
+            function showToast(boleto) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast-item';
+                toast.innerHTML = `
+                    <button type="button" class="toast-close" onclick="event.stopPropagation(); this.parentElement.remove();">&times;</button>
+                    <div class="toast-message">
+                        Un nuevo jugador ha reservado una participación de 
+                        <strong>${boleto.cantidad_numeros}</strong> números
+                    </div>
+                    <a href="${boleto.viewUrl}" class="toast-link" onclick="event.stopPropagation();">VER</a>
+                `;
+                container.appendChild(toast);
+
+                // Auto-remove after 8 seconds
+                setTimeout(() => {
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.remove(), 300);
+                }, 8000);
+            }
+
+            function checkNewBoletos() {
+                fetch(apiNewBoletosUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.boletos && data.boletos.length > 0) {
+                            data.boletos.forEach(boleto => {
+                                showToast(boleto);
+                            });
+                        }
+                    })
+                    .catch(err => console.error('Error checking new boletos:', err));
+            }
+
+            // Check every 5 seconds
+            setInterval(checkNewBoletos, 5000);
+        })();
     </script>
 
     <?php $this->endBody() ?>

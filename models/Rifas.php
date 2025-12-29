@@ -313,6 +313,32 @@ class Rifas extends \yii\db\ActiveRecord
     }
 
     /**
+     * Obtiene un array con los números disponibles (no vendidos/reservados)
+     * @return array
+     */
+    public function getNumerosDisponiblesArray()
+    {
+        // Obtener todos los números de boletos pagados y reservados
+        $numerosOcupados = BoletoNumeros::find()
+            ->alias('bn')
+            ->innerJoin('boletos b', 'b.id = bn.id_boleto')
+            ->where([
+                'b.id_rifa' => $this->id,
+                'b.is_deleted' => 0,
+                'bn.is_deleted' => 0
+            ])
+            ->andWhere(['IN', 'b.estado', [Boletos::ESTADO_PAGADO, Boletos::ESTADO_RESERVADO]])
+            ->select('bn.numero')
+            ->column();
+
+        // Generar lista completa de números (1 hasta max_numeros)
+        $todosLosNumeros = range(1, $this->max_numeros);
+
+        // Retornar los que NO están ocupados
+        return array_values(array_diff($todosLosNumeros, $numerosOcupados));
+    }
+
+    /**
      * Obtiene el ganador de esta rifa (si existe)
      * @return Jugadores|null
      */

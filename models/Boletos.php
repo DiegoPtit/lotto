@@ -21,6 +21,7 @@ use Yii;
  * @property string|null $updated_at
  * @property int $is_deleted
  * @property string|null $deleted_at
+ * @property int $is_readed
  *
  * @property BoletoNumeros[] $boletoNumeros
  * @property EvidenciaEntrega[] $evidenciaEntregas
@@ -61,8 +62,9 @@ class Boletos extends \yii\db\ActiveRecord
             [['total_precio'], 'default', 'value' => 0.00],
             [['estado'], 'default', 'value' => 'reservado'],
             [['is_deleted'], 'default', 'value' => 0],
+            [['is_readed'], 'default', 'value' => 0],
             [['codigo', 'id_rifa', 'id_jugador'], 'required'],
-            [['id_rifa', 'id_jugador', 'cantidad_numeros', 'acepta_condiciones', 'is_deleted'], 'integer'],
+            [['id_rifa', 'id_jugador', 'cantidad_numeros', 'acepta_condiciones', 'is_deleted', 'is_readed'], 'integer'],
             [['total_precio'], 'number'],
             [['estado'], 'string'],
             [['reserved_until', 'created_at', 'updated_at', 'deleted_at'], 'safe'],
@@ -93,6 +95,7 @@ class Boletos extends \yii\db\ActiveRecord
             'updated_at' => Yii::t('app', 'Updated At'),
             'is_deleted' => Yii::t('app', 'Is Deleted'),
             'deleted_at' => Yii::t('app', 'Deleted At'),
+            'is_readed' => Yii::t('app', 'Is Readed'),
         ];
     }
 

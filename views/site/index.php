@@ -683,7 +683,7 @@ $rankingIds = array_keys($ventasPorRifa);
         background: #f9f9f9;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .step-card-header {
@@ -1463,7 +1463,8 @@ $rankingIds = array_keys($ventasPorRifa);
 
         .participation-modal-body {
             padding: 20px 15px;
-            padding-bottom: 120px; /* Extra padding for stacked super footer */
+            padding-bottom: 120px;
+            /* Extra padding for stacked super footer */
             overflow-x: hidden;
         }
 
@@ -1789,7 +1790,8 @@ $rankingIds = array_keys($ventasPorRifa);
 
         .participation-modal-body {
             padding: 15px 10px;
-            padding-bottom: 130px; /* Extra padding for stacked super footer on small screens */
+            padding-bottom: 130px;
+            /* Extra padding for stacked super footer on small screens */
             width: 100%;
         }
 
@@ -2165,20 +2167,32 @@ $rankingIds = array_keys($ventasPorRifa);
     .error-message {
         color: #dc3545;
     }
+
+    /* Social Buttons */
+    .btn-social:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        opacity: 0.9;
+    }
 </style>
 
 <div class="site-index">
 
-    <?php if (!empty($mejoresRifas)): ?>
+    <!-- Rifas Activas Section -->
+    <section id="mejores-rifas" class="rifas-section">
+        <div class="container-custom">
+            <div class="section-header fade-up-element">
+                <h2 class="section-title">Rifas Activas</h2>
+                <p class="section-description">
+                    <?php if (!empty($mejoresRifas)): ?>
+                        Explora nuestras rifas disponibles y selecciona la que más te guste
+                    <?php else: ?>
+                        Aún no hay rifas activas disponibles
+                    <?php endif; ?>
+                </p>
+            </div>
 
-        <!-- Rifas Activas Section -->
-        <section id="mejores-rifas" class="rifas-section">
-            <div class="container-custom">
-                <div class="section-header fade-up-element">
-                    <h2 class="section-title">Rifas Activas</h2>
-                    <p class="section-description">Explora nuestras rifas disponibles y selecciona la que más te guste</p>
-                </div>
-
+            <?php if (!empty($mejoresRifas)): ?>
                 <div class="rifas-grid">
                     <?php
                     $delay = 0;
@@ -2207,7 +2221,7 @@ $rankingIds = array_keys($ventasPorRifa);
                             <!-- Imagen -->
                             <div class="rifa-card-image">
                                 <?php if ($rifa->img): ?>
-                                    <?= Html::img($rifa->img, [
+                                    <?= Html::img(Yii::getAlias('@web') . $rifa->img, [
                                         'alt' => Html::encode($rifa->titulo),
                                     ]) ?>
                                 <?php else: ?>
@@ -2263,6 +2277,7 @@ $rankingIds = array_keys($ventasPorRifa);
                                 }
                                 $segundosHastaFin = $rifa->getSegundosHastaFinRecaudacion();
                                 $fechaSorteo = $rifa->getFechaSorteo();
+                                $numeroGanador = $rifa->getNumeroGanador();
                                 ?>
                                 <button type="button" class="btn-participar" onclick="openParticipationModal(
                                         <?= $rifa->id ?>, 
@@ -2271,12 +2286,13 @@ $rankingIds = array_keys($ventasPorRifa);
                                         '<?= $rifa->moneda ?>', 
                                         <?= $rifa->max_numeros ?>, 
                                         <?= $rifa->getNumerosDisponibles() ?>, 
-                                        <?= Html::encode(json_encode($rifa->img)) ?>, 
+                                        <?= Html::encode(json_encode(Yii::getAlias('@web') . $rifa->img)) ?>,
                                         <?= Html::encode(json_encode($rifa->descripcion)) ?>,
                                         <?= Html::encode(json_encode($rifa->fecha_inicio)) ?>,
                                         <?= $segundosHastaFin !== null ? $segundosHastaFin : 'null' ?>,
                                         <?= Html::encode(json_encode($fechaSorteo)) ?>,
-                                        <?= Html::encode(json_encode($premiosData)) ?>
+                                        <?= Html::encode(json_encode($premiosData)) ?>,
+                                        <?= Html::encode(json_encode($numeroGanador)) ?>
                                     )">
                                     ¡PARTICIPA YA!
                                 </button>
@@ -2284,89 +2300,124 @@ $rankingIds = array_keys($ventasPorRifa);
                         </div>
                     <?php endforeach; ?>
                 </div>
-            </div>
-        </section>
+            <?php else: ?>
+                <div class="no-rifas-content fade-up-element" style="text-align: center; padding: 40px 0;">
+                    <div style="font-size: 5rem; color: #dbdbdb; margin-bottom: 20px;">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h3 style="color: #555; font-weight: 600; margin-bottom: 15px;">No hay rifas activas por el momento</h3>
+                    <p
+                        style="color: #777; margin-bottom: 30px; font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                        ¡No te pierdas nuestros próximos sorteos! Síguenos en nuestras redes sociales para estar al tanto de
+                        las novedades.
+                    </p>
 
-        <!-- Steps Section -->
-        <section class="steps-section">
-            <div class="container-custom">
-                <div class="section-header fade-up-element">
-                    <h2 class="section-title">¿Cómo Participar?</h2>
-                    <p class="section-description">Sigue estos sencillos pasos para adquirir tus boletos</p>
-                </div>
-
-                <div class="steps-grid">
-                    <!-- Paso 1 -->
-                    <div class="step-card fade-up-element">
-                        <div class="step-icon">
-                            <i class="fas fa-ticket-alt"></i>
-                        </div>
-                        <h4 class="step-title">Selecciona la cantidad</h4>
-                        <p class="step-description">Elige cuántos boletos deseas comprar</p>
+                    <div class="social-buttons-container"
+                        style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                        <a href="#" class="btn-social instagram"
+                            style="display: flex; align-items: center; gap: 10px; padding: 12px 24px; background: #E1306C; color: white; border-radius: 50px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+                            <i class="fab fa-instagram" style="font-size: 1.2rem;"></i> @example
+                        </a>
+                        <a href="#" class="btn-social facebook"
+                            style="display: flex; align-items: center; gap: 10px; padding: 12px 24px; background: #1877F2; color: white; border-radius: 50px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+                            <i class="fab fa-facebook-f" style="font-size: 1.2rem;"></i> @example
+                        </a>
+                        <a href="#" class="btn-social tiktok"
+                            style="display: flex; align-items: center; gap: 10px; padding: 12px 24px; background: #000000; color: white; border-radius: 50px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+                            <i class="fab fa-tiktok" style="font-size: 1.2rem;"></i> @example
+                        </a>
                     </div>
 
-                    <!-- Paso 2 -->
-                    <div class="step-card fade-up-element">
-                        <div class="step-icon">
-                            <i class="fas fa-user-edit"></i>
-                        </div>
-                        <h4 class="step-title">Completa tus datos</h4>
-                        <p class="step-description">Ingresa tu información personal de contacto</p>
-                    </div>
-
-                    <!-- Paso 3 -->
-                    <div class="step-card fade-up-element">
-                        <div class="step-icon">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
-                        <h4 class="step-title">Realiza el pago</h4>
-                        <p class="step-description">Paga mediante nuestros métodos disponibles</p>
-                    </div>
-
-                    <!-- Paso 4 -->
-                    <div class="step-card fade-up-element">
-                        <div class="step-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <h4 class="step-title">Verifica tu boleto</h4>
-                        <p class="step-description">Consulta el estado de tus boletos en el verificador</p>
+                    <div style="margin-top: 40px;">
+                        <?= Html::a('Quizas quieras ver nuestros ganadores de las rifas, miralos aquí... <i class="fas fa-arrow-right"></i>', ['site/sorteados'], [
+                            'style' => 'color: #007bff; text-decoration: none; font-weight: 500; font-size: 1.05rem; display: inline-flex; align-items: center; gap: 10px; transition: all 0.3s ease; padding: 5px 10px; border-radius: 8px;',
+                            'onmouseover' => "this.style.color='#0056b3'; this.style.backgroundColor='rgba(0,123,255,0.05)'; this.style.transform='translateX(5px)'",
+                            'onmouseout' => "this.style.color='#007bff'; this.style.backgroundColor='transparent'; this.style.transform='translateX(0)'"
+                        ]) ?>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Verificador Section (Rediseñado) -->
-        <div id="verificador-custom-section">
-            <section class="verificador-section">
-                <div class="container-custom">
-
-                    <div class="verificador-card fade-up-element">
-                        <div class="verificador-content">
-                            <h3>Consulta tus Boletos</h3>
-                            <p>Ingresa tu número de cédula para ver el estado de tus compras</p>
-                        </div>
-
-                        <form id="verificador-form">
-                            <div class="input-wrapper">
-                                <i class="fas fa-search input-icon"></i>
-                                <input type="text" id="cedula-input" class="custom-input"
-                                    placeholder="Número de Cédula (Ej: 12345678)" required>
-                            </div>
-                            <button type="submit" class="btn-buscar-moderno">
-                                Consultar Ahora
-                            </button>
-                        </form>
-
-                        <div id="verificador-resultados" class="verificador-resultados">
-                            <!-- Resultados AJAX -->
-                        </div>
-                    </div>
-
-                </div>
-            </section>
+            <?php endif; ?>
         </div>
+    </section>
 
-    <?php endif; ?>
+    <!-- Steps Section -->
+    <section class="steps-section">
+        <div class="container-custom">
+            <div class="section-header fade-up-element">
+                <h2 class="section-title">¿Cómo Participar?</h2>
+                <p class="section-description">Sigue estos sencillos pasos para adquirir tus boletos</p>
+            </div>
+
+            <div class="steps-grid">
+                <!-- Paso 1 -->
+                <div class="step-card fade-up-element">
+                    <div class="step-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h4 class="step-title">Selecciona la cantidad</h4>
+                    <p class="step-description">Elige cuántos boletos deseas comprar</p>
+                </div>
+
+                <!-- Paso 2 -->
+                <div class="step-card fade-up-element">
+                    <div class="step-icon">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <h4 class="step-title">Completa tus datos</h4>
+                    <p class="step-description">Ingresa tu información personal de contacto</p>
+                </div>
+
+                <!-- Paso 3 -->
+                <div class="step-card fade-up-element">
+                    <div class="step-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <h4 class="step-title">Realiza el pago</h4>
+                    <p class="step-description">Paga mediante nuestros métodos disponibles</p>
+                </div>
+
+                <!-- Paso 4 -->
+                <div class="step-card fade-up-element">
+                    <div class="step-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4 class="step-title">Verifica tu boleto</h4>
+                    <p class="step-description">Consulta el estado de tus boletos en el verificador</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Verificador Section (Rediseñado) -->
+    <div id="verificador-custom-section">
+        <section class="verificador-section">
+            <div class="container-custom">
+
+                <div class="verificador-card fade-up-element">
+                    <div class="verificador-content">
+                        <h3>Consulta tus Boletos</h3>
+                        <p>Ingresa tu número de cédula para ver el estado de tus compras</p>
+                    </div>
+
+                    <form id="verificador-form">
+                        <div class="input-wrapper">
+                            <i class="fas fa-search input-icon"></i>
+                            <input type="text" id="cedula-input" class="custom-input"
+                                placeholder="Número de Cédula (Ej: 12345678)" required>
+                        </div>
+                        <button type="submit" class="btn-buscar-moderno">
+                            Consultar Ahora
+                        </button>
+                    </form>
+
+                    <div id="verificador-resultados" class="verificador-resultados">
+                        <!-- Resultados AJAX -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
 
 </div>
 
@@ -2744,7 +2795,7 @@ $rankingIds = array_keys($ventasPorRifa);
 
         prizesStack.innerHTML = premios.map((premio, index) => {
             const valorFormateado = premio.valor_estimado
-                ? `$${parseFloat(premio.valor_estimado).toLocaleString()}`
+                ? `Bs. ${parseFloat(premio.valor_estimado).toLocaleString()}`
                 : '';
 
             return `
@@ -2769,7 +2820,7 @@ $rankingIds = array_keys($ventasPorRifa);
     }
 
     // Abrir modal de participación
-    function openParticipationModal(rifaId, titulo, precio, moneda, maxNumeros, disponibles, imgUrl, descripcion, fechaInicio, segundosHastaFin, fechaSorteo, premios) {
+    function openParticipationModal(rifaId, titulo, precio, moneda, maxNumeros, disponibles, imgUrl, descripcion, fechaInicio, segundosHastaFin, fechaSorteo, premios, numeroGanador) {
         // Verificar si aceptó términos
         if (typeof TermsManager !== 'undefined' && !TermsManager.isAccepted()) {
             const termsModal = document.getElementById('termsModal');
@@ -2777,6 +2828,17 @@ $rankingIds = array_keys($ventasPorRifa);
                 termsModal.classList.add('show');
             }
             alert('Debe aceptar los términos y condiciones antes de participar.');
+            return;
+        }
+
+        // Verificar si la rifa ha expirado (tiempo = 0)
+        if (segundosHastaFin !== null && segundosHastaFin <= 0) {
+            // Mostrar modal de rifa expirada en lugar del modal de participación
+            if (typeof openExpiredRaffleModal === 'function') {
+                openExpiredRaffleModal(titulo, imgUrl, descripcion, precio, moneda, numeroGanador);
+            } else {
+                alert('El tiempo para participar en esta rifa ha terminado.');
+            }
             return;
         }
 

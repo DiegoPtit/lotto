@@ -732,7 +732,7 @@ $this->title = 'Gestionar Rifas - ' . Yii::$app->name;
                         <!-- Imagen Container -->
                         <div class="rifa-card-image-container">
                             <?php if ($rifa->img): ?>
-                                <?= Html::img($rifa->img, [
+                                <?= Html::img(Yii::getAlias('@web') . $rifa->img, [
                                     'alt' => Html::encode($rifa->titulo),
                                 ]) ?>
                             <?php else: ?>

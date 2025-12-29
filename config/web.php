@@ -6,11 +6,12 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'lotto-app',
     'name' => 'Lotto',
+    'timeZone' => 'America/Caracas',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'components' => [
         'request' => [

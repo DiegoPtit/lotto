@@ -49,6 +49,8 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.
         </div>
         <nav class="sidebar-nav">
             <?= Html::a('<i class="fas fa-home"></i> <span>Inicio</span>', ['/site/index'], ['class' => 'sidebar-link']) ?>
+            <?= Html::a('<i class="fas fa-trophy"></i> <span>Rifas Sorteadas</span>', ['/site/sorteados'], ['class' => 'sidebar-link']) ?>
+            <?= Html::a('<i class="fas fa-star"></i> <span>Testimonios</span>', ['/site/testimonios'], ['class' => 'sidebar-link']) ?>
             <?= Html::a('<i class="fas fa-info-circle"></i> <span>Acerca de</span>', ['/site/about'], ['class' => 'sidebar-link']) ?>
             <?= Html::a('<i class="fas fa-envelope"></i> <span>Contacto</span>', ['/site/contact'], ['class' => 'sidebar-link']) ?>
 
@@ -465,6 +467,611 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.
         }
     }
     ?>
+
+    <!-- Modal de Rifa Expirada -->
+    <div id="expiredRaffleModal" class="expired-raffle-modal">
+        <div class="expired-raffle-modal-content">
+            <div class="expired-raffle-modal-header">
+                <h3 class="expired-raffle-modal-title">
+                    <i class="fas fa-clock"></i> Tiempo Agotado
+                </h3>
+                <span class="expired-raffle-modal-close" onclick="closeExpiredRaffleModal()">&times;</span>
+            </div>
+            <div class="expired-raffle-modal-body">
+                <!-- Imagen de la rifa -->
+                <div class="expired-raffle-image-container">
+                    <img id="expiredRaffleImg" src="" alt="Imagen de la Rifa" class="expired-raffle-img"
+                        style="display: none;">
+                    <div id="expiredRafflePlaceholder" class="expired-raffle-placeholder" style="display: none;">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                </div>
+
+                <!-- Información de la rifa -->
+                <div class="expired-raffle-info">
+                    <h4 id="expiredRaffleTitle" class="expired-raffle-title"></h4>
+                    <p id="expiredRaffleDesc" class="expired-raffle-desc"></p>
+
+                    <!-- Precio del boleto -->
+                    <div class="expired-raffle-price">
+                        <i class="fas fa-tag"></i>
+                        <span>Precio del Boleto:</span>
+                        <strong id="expiredRafflePrice"></strong>
+                    </div>
+
+                    <!-- Tiempo Agotado -->
+                    <div class="expired-raffle-timer">
+                        <div class="expired-timer-display">
+                            <div class="timer-unit">
+                                <span class="timer-value">00</span>
+                                <span class="timer-label">Días</span>
+                            </div>
+                            <div class="timer-unit">
+                                <span class="timer-value">00</span>
+                                <span class="timer-label">Horas</span>
+                            </div>
+                            <div class="timer-unit">
+                                <span class="timer-value">00</span>
+                                <span class="timer-label">Min</span>
+                            </div>
+                            <div class="timer-unit">
+                                <span class="timer-value">00</span>
+                                <span class="timer-label">Seg</span>
+                            </div>
+                        </div>
+                        <div class="expired-timer-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            ¡Tiempo Agotado!
+                        </div>
+                    </div>
+
+                    <!-- Número Ganador -->
+                    <div class="expired-raffle-winner">
+                        <div class="winner-header">
+                            <i class="fas fa-trophy"></i>
+                            <span>Número Ganador</span>
+                        </div>
+                        <div id="expiredRaffleWinnerNumber" class="winner-number"></div>
+                        <p id="expiredRaffleWinnerMessage" class="winner-message"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="expired-raffle-modal-footer">
+                <button type="button" class="btn-expired-close" onclick="closeExpiredRaffleModal()">
+                    <i class="fas fa-times-circle"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos del Modal de Rifa Expirada */
+        .expired-raffle-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .expired-raffle-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .expired-raffle-modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 0;
+            border-radius: 16px;
+            max-width: 480px;
+            width: 100%;
+            max-height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(231, 76, 60, 0.2);
+            animation: slideDown 0.4s ease;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            overflow: hidden;
+        }
+
+        .expired-raffle-modal-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 50%, #c0392b 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .expired-raffle-modal-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expired-raffle-modal-title i {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .expired-raffle-modal-close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            line-height: 1;
+        }
+
+        .expired-raffle-modal-close:hover {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+
+        .expired-raffle-modal-body {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Imagen de la rifa */
+        .expired-raffle-image-container {
+            width: 100%;
+            height: 140px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .expired-raffle-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .expired-raffle-placeholder {
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Info de la rifa */
+        .expired-raffle-info {
+            color: #ecf0f1;
+        }
+
+        .expired-raffle-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 8px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .expired-raffle-desc {
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            text-align: center;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        /* Precio del boleto */
+        .expired-raffle-price {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(39, 174, 96, 0.2) 100%);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .expired-raffle-price i {
+            color: #2ecc71;
+            font-size: 1rem;
+        }
+
+        .expired-raffle-price span {
+            color: #bdc3c7;
+            font-size: 0.9rem;
+        }
+
+        .expired-raffle-price strong {
+            color: #2ecc71;
+            font-size: 1.1rem;
+            margin-left: auto;
+        }
+
+        /* Timer Expirado */
+        .expired-raffle-timer {
+            background: rgba(231, 76, 60, 0.15);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 12px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .expired-timer-display {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .timer-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-value {
+            background: rgba(0, 0, 0, 0.3);
+            color: #e74c3c;
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            min-width: 38px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-label {
+            color: #95a5a6;
+            font-size: 0.65rem;
+            margin-top: 3px;
+            text-transform: uppercase;
+        }
+
+        .expired-timer-message {
+            color: #e74c3c;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .expired-timer-message i {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Número Ganador */
+        .expired-raffle-winner {
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.15) 0%, rgba(243, 156, 18, 0.15) 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .winner-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #f1c40f;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .winner-header i {
+            font-size: 1.1rem;
+        }
+
+        .winner-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f39c12;
+            text-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+        }
+
+        .winner-number.pending {
+            font-size: 1.2rem;
+            color: #95a5a6;
+            letter-spacing: normal;
+            text-shadow: none;
+        }
+
+        .winner-message {
+            color: #bdc3c7;
+            font-size: 0.8rem;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .winner-message.pending {
+            color: #f39c12;
+            font-style: italic;
+        }
+
+        /* Footer del modal */
+        .expired-raffle-modal-footer {
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 16px 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .btn-expired-close {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-expired-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #4a6278 0%, #34495e 100%);
+        }
+
+        /* Responsive para pantallas pequeñas */
+        @media (max-width: 480px) {
+            .expired-raffle-modal.show {
+                padding: 10px;
+            }
+
+            .expired-raffle-modal-content {
+                max-height: calc(100vh - 20px);
+                border-radius: 12px;
+            }
+
+            .expired-raffle-modal-header {
+                padding: 12px 15px;
+                border-radius: 12px 12px 0 0;
+            }
+
+            .expired-raffle-modal-title {
+                font-size: 1rem;
+            }
+
+            .expired-raffle-modal-close {
+                font-size: 24px;
+            }
+
+            .expired-raffle-modal-body {
+                padding: 12px;
+            }
+
+            .expired-raffle-image-container {
+                height: 120px;
+            }
+
+            .expired-raffle-placeholder {
+                font-size: 2.5rem;
+            }
+
+            .expired-raffle-title {
+                font-size: 1.1rem;
+            }
+
+            .expired-raffle-desc {
+                font-size: 0.8rem;
+                max-height: 50px;
+            }
+
+            .expired-raffle-price {
+                padding: 10px 12px;
+            }
+
+            .expired-raffle-timer {
+                padding: 10px;
+            }
+
+            .timer-value {
+                font-size: 1.1rem;
+                padding: 5px 8px;
+                min-width: 32px;
+            }
+
+            .timer-label {
+                font-size: 0.6rem;
+            }
+
+            .expired-timer-message {
+                font-size: 0.85rem;
+            }
+
+            .expired-raffle-winner {
+                padding: 12px;
+            }
+
+            .winner-header {
+                font-size: 0.9rem;
+            }
+
+            .winner-number {
+                font-size: 1.6rem;
+                letter-spacing: 3px;
+            }
+
+            .winner-number.pending {
+                font-size: 1rem;
+            }
+
+            .winner-message {
+                font-size: 0.75rem;
+            }
+
+            .expired-raffle-modal-footer {
+                padding: 10px 12px;
+                border-radius: 0 0 12px 12px;
+            }
+
+            .btn-expired-close {
+                padding: 8px 25px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Responsive para pantallas muy pequeñas (landscape) */
+        @media (max-height: 500px) {
+            .expired-raffle-modal.show {
+                padding: 5px;
+            }
+
+            .expired-raffle-modal-content {
+                max-height: calc(100vh - 10px);
+            }
+
+            .expired-raffle-modal-header {
+                padding: 10px 15px;
+            }
+
+            .expired-raffle-modal-body {
+                padding: 10px;
+            }
+
+            .expired-raffle-image-container {
+                height: 80px;
+                margin-bottom: 10px;
+            }
+
+            .expired-raffle-desc {
+                margin-bottom: 10px;
+                max-height: 40px;
+            }
+
+            .expired-raffle-price,
+            .expired-raffle-timer,
+            .expired-raffle-winner {
+                margin-bottom: 8px;
+                padding: 8px 10px;
+            }
+
+            .expired-raffle-modal-footer {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+
+    <script>
+        // Funciones para el modal de rifa expirada
+        function openExpiredRaffleModal(titulo, imgUrl, descripcion, precio, moneda, numeroGanador) {
+            const modal = document.getElementById('expiredRaffleModal');
+
+            // Imagen
+            const imgEl = document.getElementById('expiredRaffleImg');
+            const placeholderEl = document.getElementById('expiredRafflePlaceholder');
+
+            if (imgUrl && imgUrl !== 'null') {
+                imgEl.src = imgUrl;
+                imgEl.style.display = 'block';
+                placeholderEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                placeholderEl.style.display = 'flex';
+            }
+
+            // Título y descripción
+            document.getElementById('expiredRaffleTitle').textContent = titulo;
+            document.getElementById('expiredRaffleDesc').textContent = descripcion || '';
+
+            // Precio
+            const simbolo = moneda === 'USD' ? '$' : 'Bs.';
+            document.getElementById('expiredRafflePrice').textContent = simbolo + ' ' + parseFloat(precio).toFixed(2);
+
+            // Número ganador
+            const winnerNumberEl = document.getElementById('expiredRaffleWinnerNumber');
+            const winnerMessageEl = document.getElementById('expiredRaffleWinnerMessage');
+
+            if (numeroGanador && numeroGanador !== 'null' && numeroGanador !== '') {
+                winnerNumberEl.textContent = numeroGanador;
+                winnerNumberEl.classList.remove('pending');
+                winnerMessageEl.textContent = '¡Este es el número ganador de la rifa!';
+                winnerMessageEl.classList.remove('pending');
+            } else {
+                winnerNumberEl.textContent = '---';
+                winnerNumberEl.classList.add('pending');
+                winnerMessageEl.textContent = 'Todavía no se ha decidido un ganador, vuelve en unos minutos para obtener el resultado...';
+                winnerMessageEl.classList.add('pending');
+            }
+
+            // Mostrar modal
+            modal.classList.add('show');
+        }
+
+        function closeExpiredRaffleModal() {
+            const modal = document.getElementById('expiredRaffleModal');
+            modal.classList.remove('show');
+        }
+
+        // Cerrar al hacer clic fuera del modal
+        document.addEventListener('click', function (event) {
+            const modal = document.getElementById('expiredRaffleModal');
+            if (event.target === modal) {
+                closeExpiredRaffleModal();
+            }
+        });
+
+        // Cerrar con Escape
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeExpiredRaffleModal();
+            }
+        });
+    </script>
 
     <!-- App Footer -->
 

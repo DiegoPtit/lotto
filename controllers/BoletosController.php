@@ -28,7 +28,7 @@ class BoletosController extends Controller
         return [
             'contentNegotiator' => [
                 'class' => ContentNegotiator::class,
-                'except' => ['status'], // Excluir acción status para que devuelva HTML
+                'except' => ['status', 'resubir-comprobante'], // Excluir acción status para que devuelva HTML
                 'formats' => [
                     'application/json' => Response::FORMAT_JSON,
                 ],
@@ -373,10 +373,20 @@ class BoletosController extends Controller
     private function generarNumerosUnicos($rifa, $cantidad)
     {
         // Obtener todos los números ya usados en esta rifa
+        // Solo considerar números de boletos activos (no reembolsados ni anulados)
         $numerosUsados = BoletoNumeros::find()
             ->alias('bn')
             ->innerJoin(['b' => 'boletos'], 'bn.id_boleto = b.id')
             ->where(['b.id_rifa' => $rifa->id, 'b.is_deleted' => 0, 'bn.is_deleted' => 0])
+            ->andWhere([
+                'IN',
+                'b.estado',
+                [
+                    Boletos::ESTADO_PAGADO,
+                    Boletos::ESTADO_RESERVADO,
+                    Boletos::ESTADO_GANADOR,
+                ]
+            ])
             ->select(['bn.numero'])
             ->column();
 
@@ -406,23 +416,62 @@ class BoletosController extends Controller
     }
 
     /**
-     * Sube el comprobante de pago al servicio de imágenes
-     * @param string $base64Image
-     * @param int $boletoId
-     * @return string|null
+     * Sube el comprobante de pago al directorio local
+     * @param string $base64Image Imagen en formato Base64
+     * @param int $boletoId ID del boleto
+     * @return string|null URL relativa del archivo guardado
      */
     private function subirComprobante($base64Image, $boletoId)
     {
         try {
-            // Por ahora retornamos null ya que el servicio se implementará después
-            // Cuando esté listo, se hará POST a localhost/mediafiles/web/index?r=images/post
+            // Verificar que sea una imagen Base64 válida
+            if (strpos($base64Image, 'data:image/') !== 0) {
+                Yii::warning("Comprobante para boleto {$boletoId} no es una imagen Base64 válida", 'boletos');
+                return null;
+            }
 
-            // Log para seguimiento
-            Yii::warning("Comprobante para boleto {$boletoId} pendiente de subir al servicio de imágenes", 'boletos');
+            // Extraer el tipo de imagen y los datos
+            preg_match('/data:image\/(\w+);base64,/', $base64Image, $matches);
+            $extension = $matches[1] ?? 'png';
 
-            return null;
+            // Validar extensión permitida
+            $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array(strtolower($extension), $extensionesPermitidas)) {
+                Yii::warning("Extensión de imagen no permitida: {$extension}", 'boletos');
+                return null;
+            }
+
+            // Decodificar Base64
+            $imageData = preg_replace('/data:image\/\w+;base64,/', '', $base64Image);
+            $imageData = base64_decode($imageData);
+
+            if ($imageData === false) {
+                Yii::error("Error al decodificar Base64 para boleto {$boletoId}", 'boletos');
+                return null;
+            }
+
+            // Crear directorio si no existe
+            $uploadPath = Yii::getAlias('@webroot/uploads/comprobantes/');
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            // Generar nombre único de archivo
+            $fileName = 'pago_' . $boletoId . '_' . time() . '_' . uniqid() . '.' . $extension;
+            $filePath = $uploadPath . $fileName;
+
+            // Guardar archivo
+            if (file_put_contents($filePath, $imageData) === false) {
+                Yii::error("Error al guardar comprobante en {$filePath}", 'boletos');
+                return null;
+            }
+
+            Yii::info("Comprobante guardado exitosamente: {$fileName}", 'boletos');
+
+            // Retornar URL relativa
+            return '/uploads/comprobantes/' . $fileName;
+
         } catch (\Exception $e) {
-            // Error silencioso para el usuario, pero logueado
             Yii::error("Error al subir comprobante: " . $e->getMessage(), 'boletos');
             return null;
         }
@@ -536,5 +585,130 @@ class BoletosController extends Controller
             Yii::error("Excepción al enviar correo: " . $e->getMessage(), 'boletos');
             throw $e;
         }
+    }
+
+    /**
+     * Permite a un usuario resubir un comprobante de pago para un boleto anulado
+     * @param int $id ID del boleto
+     * @return string|Response
+     */
+    public function actionResubirComprobante($id)
+    {
+        $boleto = Boletos::findOne(['id' => $id, 'is_deleted' => 0]);
+
+        if (!$boleto) {
+            throw new \yii\web\NotFoundHttpException('El boleto solicitado no existe.');
+        }
+
+        // Solo permitir si el boleto está anulado
+        if ($boleto->estado !== Boletos::ESTADO_ANULADO) {
+            Yii::$app->session->setFlash('error', 'Solo se puede resubir comprobante para boletos anulados.');
+            return $this->redirect(['status', 'id' => $id]);
+        }
+
+        // Si es POST, procesar el nuevo comprobante
+        if (Yii::$app->request->isPost) {
+            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+            $transaction = Yii::$app->db->beginTransaction();
+
+            try {
+                // Procesar archivo subido
+                $file = \yii\web\UploadedFile::getInstanceByName('comprobante');
+
+                if (!$file) {
+                    return ['success' => false, 'message' => 'No se recibió ningún archivo'];
+                }
+
+                // Validar tipo de archivo
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                if (!in_array($file->type, $allowedTypes)) {
+                    return ['success' => false, 'message' => 'Tipo de archivo no permitido'];
+                }
+
+                // Validar tamaño (5MB max)
+                if ($file->size > 5 * 1024 * 1024) {
+                    return ['success' => false, 'message' => 'El archivo es muy grande (máx. 5MB)'];
+                }
+
+                // Convertir a Base64 si es imagen
+                $base64 = null;
+                if (str_starts_with($file->type, 'image/')) {
+                    $imageData = file_get_contents($file->tempName);
+                    $base64 = 'data:' . $file->type . ';base64,' . base64_encode($imageData);
+                }
+
+                // Encontrar o crear pago
+                $pago = Pagos::findOne(['id_boleto' => $boleto->id, 'is_deleted' => 0]);
+
+                if (!$pago) {
+                    // Crear nuevo pago
+                    $pago = new Pagos();
+                    $pago->id_boleto = $boleto->id;
+                    $pago->id_jugador = $boleto->id_jugador;
+                    $pago->monto = $boleto->total_precio;
+                    $pago->moneda = 'Bs.';
+                    $pago->estado = Pagos::ESTADO_PENDING;
+                    $pago->transaction_id = 'RESUBMIT-' . time() . '-' . $boleto->id;
+                }
+
+                // Subir comprobante
+                if ($base64) {
+                    $comprobanteUrl = $this->subirComprobante($base64, $boleto->id);
+                    if ($comprobanteUrl) {
+                        $pago->comprobante_url = $comprobanteUrl;
+                    }
+                }
+
+                $pago->estado = Pagos::ESTADO_PENDING;
+                $pago->setEstadoToPending();
+
+                if (!$pago->save()) {
+                    throw new \Exception('Error al actualizar el pago');
+                }
+
+                // Cambiar boleto a reservado con nueva fecha
+                $boleto->estado = Boletos::ESTADO_RESERVADO;
+                $boleto->setEstadoToReservado();
+                $boleto->reserved_until = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+                if (!$boleto->save()) {
+                    throw new \Exception('Error al actualizar el boleto');
+                }
+
+                $transaction->commit();
+
+                return [
+                    'success' => true,
+                    'message' => 'Comprobante recibido. Tu boleto está siendo procesado nuevamente.',
+                    'redirect' => Yii::$app->urlManager->createUrl(['boletos/status', 'id' => $boleto->id])
+                ];
+
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                Yii::error('Error en resubir comprobante: ' . $e->getMessage());
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+
+        // GET: Mostrar formulario
+        $rifa = $boleto->rifa;
+        $jugador = $boleto->jugador;
+        $boletoNumeros = BoletoNumeros::find()
+            ->where(['id_boleto' => $boleto->id, 'is_deleted' => 0])
+            ->orderBy(['numero' => SORT_ASC])
+            ->all();
+
+        $numeros = [];
+        foreach ($boletoNumeros as $bn) {
+            $numeros[] = $bn->numero;
+        }
+
+        return $this->render('resubir-comprobante', [
+            'boleto' => $boleto,
+            'rifa' => $rifa,
+            'jugador' => $jugador,
+            'numeros' => $numeros,
+        ]);
     }
 }

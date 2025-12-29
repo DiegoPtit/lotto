@@ -454,7 +454,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                         <i class="fas fa-ticket-alt me-2"></i>
                         Listado de rifas
                     </h2>
-                    <select class="filter-select" id="estado-filter" onchange="window.location.href='<?= Url::to(['panel/index']) ?>&estado=' + this.value">
+                    <select class="filter-select" id="estado-filter"
+                        onchange="window.location.href='<?= Url::to(['panel/index']) ?>&estado=' + this.value">
                         <option value="<?= Rifas::ESTADO_ACTIVA ?>" <?= $estadoFiltro === Rifas::ESTADO_ACTIVA ? 'selected' : '' ?>>Activas</option>
                         <option value="<?= Rifas::ESTADO_BORRADOR ?>" <?= $estadoFiltro === Rifas::ESTADO_BORRADOR ? 'selected' : '' ?>>Borrador</option>
                         <option value="<?= Rifas::ESTADO_SORTEADA ?>" <?= $estadoFiltro === Rifas::ESTADO_SORTEADA ? 'selected' : '' ?>>Sorteadas</option>
@@ -471,12 +472,12 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                         <?= Html::a('<i class="fas fa-plus me-2"></i>Crear una nueva', ['/rifas/create'], ['class' => 'btn btn-create-new']) ?>
                     </div>
                 <?php else: ?>
-                    <?php foreach ($rifasFiltradas as $rifa): 
+                    <?php foreach ($rifasFiltradas as $rifa):
                         $segundosRecaudacion = $rifa->getSegundosHastaFinRecaudacion();
                         $segundosSorteo = $rifa->getSegundosHastaSorteo();
                         $fechasCoinciden = ($segundosRecaudacion !== null && $segundosSorteo !== null && abs($segundosRecaudacion - $segundosSorteo) < 60);
                         $ganador = $rifa->estado === Rifas::ESTADO_SORTEADA ? $rifa->getGanador() : null;
-                    ?>
+                        ?>
                         <div class="rifa-item">
                             <?= Html::a('', ['/panel/rifas-view', 'id' => $rifa->id], [
                                 'class' => 'rifa-item-link'
@@ -484,7 +485,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                             <div class="rifa-content">
                                 <div class="rifa-title">
                                     <?= Html::encode($rifa->titulo) ?>
-                                    <span class="rifa-badge rifa-badge-<?= $rifa->estado ?> ms-2"><?= strtoupper($rifa->estado) ?></span>
+                                    <span
+                                        class="rifa-badge rifa-badge-<?= $rifa->estado ?> ms-2"><?= strtoupper($rifa->estado) ?></span>
                                 </div>
                                 <div class="rifa-meta">
                                     <?php if ($rifa->fecha_fin): ?>
@@ -494,7 +496,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                                     <span><i class="fas fa-dollar-sign me-1"></i>
                                         <?= Yii::$app->formatter->asCurrency($rifa->precio_boleto, 'Bs. ') ?></span>
                                     <?php if ($ganador): ?>
-                                        <span><i class="fas fa-trophy me-1"></i>Ganador: <?= Html::encode($ganador->nombre) ?></span>
+                                        <span><i class="fas fa-trophy me-1"></i>Ganador:
+                                            <?= Html::encode($ganador->nombre) ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <!-- Contadores de tiempo (solo para activas) -->
@@ -502,7 +505,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                                     <?php if ($fechasCoinciden): ?>
                                         <div class="rifa-countdown-row">
                                             <span class="rifa-countdown-label"><i class="fas fa-clock me-1"></i>Fin y sorteo:</span>
-                                            <span class="rifa-countdown-value rifa-countdown-timer" data-countdown="<?= $segundosRecaudacion ?>">
+                                            <span class="rifa-countdown-value rifa-countdown-timer"
+                                                data-countdown="<?= $segundosRecaudacion ?>">
                                                 <?= $segundosRecaudacion > 0 ? '--:--:--:--' : 'Finalizado' ?>
                                             </span>
                                         </div>
@@ -510,7 +514,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                                         <?php if ($segundosRecaudacion !== null): ?>
                                             <div class="rifa-countdown-row">
                                                 <span class="rifa-countdown-label"><i class="fas fa-clock me-1"></i>Fin recaudación:</span>
-                                                <span class="rifa-countdown-value rifa-countdown-timer" data-countdown="<?= $segundosRecaudacion ?>">
+                                                <span class="rifa-countdown-value rifa-countdown-timer"
+                                                    data-countdown="<?= $segundosRecaudacion ?>">
                                                     <?= $segundosRecaudacion > 0 ? '--:--:--:--' : 'Finalizado' ?>
                                                 </span>
                                             </div>
@@ -518,7 +523,8 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                                         <?php if ($segundosSorteo !== null): ?>
                                             <div class="rifa-countdown-row">
                                                 <span class="rifa-countdown-label"><i class="fas fa-gift me-1"></i>Día del sorteo:</span>
-                                                <span class="rifa-countdown-value rifa-countdown-timer" data-countdown="<?= $segundosSorteo ?>">
+                                                <span class="rifa-countdown-value rifa-countdown-timer"
+                                                    data-countdown="<?= $segundosSorteo ?>">
                                                     <?= $segundosSorteo > 0 ? '--:--:--:--' : 'Finalizado' ?>
                                                 </span>
                                             </div>
@@ -528,7 +534,7 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                             </div>
                             <div class="rifa-image-container">
                                 <?php if (!empty($rifa->img)): ?>
-                                    <img src="<?= Html::encode($rifa->img) ?>" alt="<?= Html::encode($rifa->titulo) ?>">
+                                    <?= Html::img(Yii::getAlias('@web') . $rifa->img, ['alt' => $rifa->titulo]) ?>
                                 <?php else: ?>
                                     <i class="fas fa-ticket-alt rifa-image-fallback"></i>
                                 <?php endif; ?>
@@ -536,6 +542,21 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seccion: Rifas Pendientes de Ganadores -->
+    <div class="row" id="rifas-pendientes-row" style="display: none;">
+        <div class="col-12">
+            <div class="admin-card" style="border-left: 4px solid #e67e22;">
+                <h2 class="admin-card-title" style="color: #e67e22;">
+                    <i class="fas fa-hourglass-end me-2"></i>
+                    Rifas Pendientes de Ganadores
+                </h2>
+                <div id="rifas-pendientes-list">
+                    <!-- Se pobla dinámicamente -->
+                </div>
             </div>
         </div>
     </div>
@@ -705,49 +726,92 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.um
 
 <!-- Script para contadores de rifas -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rifaCountdownElements = document.querySelectorAll('.rifa-countdown-timer[data-countdown]');
-    
-    function formatRifaTime(totalSeconds) {
-        if (totalSeconds <= 0) {
-            return 'Finalizado';
-        }
-        
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        
-        return String(days).padStart(2, '0') + ':' +
-               String(hours).padStart(2, '0') + ':' +
-               String(minutes).padStart(2, '0') + ':' +
-               String(seconds).padStart(2, '0');
-    }
-    
-    function updateRifaCountdowns() {
-        rifaCountdownElements.forEach(function(el) {
-            let seconds = parseInt(el.getAttribute('data-countdown'), 10);
-            
-            if (seconds > 0) {
-                seconds--;
-                el.setAttribute('data-countdown', seconds);
-                el.textContent = formatRifaTime(seconds);
-            } else {
-                el.textContent = 'Finalizado';
-                el.classList.add('rifa-countdown-expired');
+    document.addEventListener('DOMContentLoaded', function () {
+        const rifaCountdownElements = document.querySelectorAll('.rifa-countdown-timer[data-countdown]');
+
+        function formatRifaTime(totalSeconds) {
+            if (totalSeconds <= 0) {
+                return 'Finalizado';
             }
+
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            return String(days).padStart(2, '0') + ':' +
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+        }
+
+        function updateRifaCountdowns() {
+            rifaCountdownElements.forEach(function (el) {
+                let seconds = parseInt(el.getAttribute('data-countdown'), 10);
+
+                if (seconds > 0) {
+                    seconds--;
+                    el.setAttribute('data-countdown', seconds);
+                    el.textContent = formatRifaTime(seconds);
+                } else {
+                    el.textContent = 'Finalizado';
+                    el.classList.add('rifa-countdown-expired');
+                }
+            });
+        }
+
+        // Inicializar valores
+        rifaCountdownElements.forEach(function (el) {
+            const seconds = parseInt(el.getAttribute('data-countdown'), 10);
+            el.textContent = formatRifaTime(seconds);
         });
-    }
-    
-    // Inicializar valores
-    rifaCountdownElements.forEach(function(el) {
-        const seconds = parseInt(el.getAttribute('data-countdown'), 10);
-        el.textContent = formatRifaTime(seconds);
+
+        // Actualizar cada segundo
+        if (rifaCountdownElements.length > 0) {
+            setInterval(updateRifaCountdowns, 1000);
+        }
+
+        // ==================== REAL-TIME RIFAS PENDIENTES ====================
+        const apiRifasPendientesUrl = '<?= \yii\helpers\Url::to(['panel/api-rifas-pendientes']) ?>';
+
+        function checkRifasPendientes() {
+            fetch(apiRifasPendientesUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const container = document.getElementById('rifas-pendientes-row');
+                    const list = document.getElementById('rifas-pendientes-list');
+
+                    if (data.rifas && data.rifas.length > 0) {
+                        container.style.display = 'block';
+                        let html = '';
+                        data.rifas.forEach(rifa => {
+                            html += `
+                                <div class="rifa-item" style="border-left-color: #e67e22;">
+                                    <a href="${rifa.viewUrl}" class="rifa-item-link"></a>
+                                    <div class="rifa-content">
+                                        <div class="rifa-title">
+                                            ${rifa.titulo}
+                                            <span class="rifa-badge" style="background: #e67e22;">PENDIENTE</span>
+                                        </div>
+                                        <div class="rifa-meta">
+                                            <span><i class="fas fa-calendar me-1"></i>Sorteo: ${rifa.fecha_sorteo}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        list.innerHTML = html;
+                    } else {
+                        container.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Error checking rifas pendientes:', err));
+        }
+
+        // Check every 10 seconds
+        checkRifasPendientes();
+        setInterval(checkRifasPendientes, 10000);
     });
-    
-    // Actualizar cada segundo
-    if (rifaCountdownElements.length > 0) {
-        setInterval(updateRifaCountdowns, 1000);
-    }
-});
 </script>

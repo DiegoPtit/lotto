@@ -69,6 +69,23 @@ class SiteController extends Controller
     }
 
     /**
+     * Displays testimonios page.
+     *
+     * @return string
+     */
+    public function actionTestimonios()
+    {
+        $testimonios = \app\models\Testimonios::find()
+            ->where(['is_deleted' => 0])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->all();
+
+        return $this->render('testimonios', [
+            'testimonios' => $testimonios,
+        ]);
+    }
+
+    /**
      * Login action.
      *
      * @return Response|string
@@ -213,6 +230,39 @@ class SiteController extends Controller
 
         return $this->render('politics', [
             'type' => $type,
+        ]);
+    }
+
+    /**
+     * Displays page of drawn raffles with winners.
+     *
+     * @return string
+     */
+    public function actionSorteados()
+    {
+        // Obtener rifas sorteadas con sus ganadores
+        $rifasSorteadas = \app\models\Rifas::find()
+            ->where(['estado' => \app\models\Rifas::ESTADO_SORTEADA])
+            ->andWhere(['is_deleted' => 0])
+            ->orderBy(['updated_at' => SORT_DESC])
+            ->all();
+
+        // Obtener ganadores para cada rifa
+        $ganadoresPorRifa = [];
+        foreach ($rifasSorteadas as $rifa) {
+            $ganadores = \app\models\SorteosGanadores::find()
+                ->alias('sg')
+                ->innerJoin('sorteos s', 's.id = sg.id_sorteo')
+                ->where(['s.id_rifa' => $rifa->id])
+                ->with(['boleto.jugador', 'premio'])
+                ->all();
+
+            $ganadoresPorRifa[$rifa->id] = $ganadores;
+        }
+
+        return $this->render('sorteados', [
+            'rifasSorteadas' => $rifasSorteadas,
+            'ganadoresPorRifa' => $ganadoresPorRifa,
         ]);
     }
 }

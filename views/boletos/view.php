@@ -810,6 +810,22 @@ $this->title = 'Detalles del Boleto: ' . Html::encode($boleto->codigo);
                                 </button>
                             <?php endif; ?>
                         </div>
+
+                        <?php if ($estadoActual === 'anulado'): ?>
+                            <!-- Enlace de aprobación manual (fuera de la grilla) -->
+                            <div
+                                style="margin-top: 20px; padding: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 6px; width: 100%;">
+                                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #92400e; line-height: 1.5;">
+                                    <i class="fas fa-info-circle" style="color: #f59e0b;"></i>
+                                    Si el jugador se contactó y aclaró la situación, puedes aprobar manualmente su boleto.
+                                </p>
+                                <a href="javascript:void(0)" id="btn-abrir-modal-aprobacion"
+                                    style="color: #10b981; font-weight: 600; text-decoration: none; font-size: 0.9rem; cursor: pointer;">
+                                    <i class="fas fa-user-check me-1"></i>
+                                    Aprobar Boleto Manualmente
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -823,7 +839,7 @@ $this->title = 'Detalles del Boleto: ' . Html::encode($boleto->codigo);
                 </div>
                 <div class="rifa-image-container">
                     <?php if (!empty($rifa->img)): ?>
-                        <img src="<?= Html::encode($rifa->img) ?>" alt="<?= Html::encode($rifa->titulo) ?>">
+                        <?= Html::img(Yii::getAlias('@web') . $rifa->img, ['alt' => $rifa->titulo]) ?>
                     <?php else: ?>
                         <i class="fas fa-ticket-alt rifa-image-fallback"></i>
                     <?php endif; ?>
@@ -963,11 +979,13 @@ $this->title = 'Detalles del Boleto: ' . Html::encode($boleto->codigo);
                                                 <div class="pago-detail-label">Comprobante</div>
                                                 <?php if (!empty($pago->comprobante_url)): ?>
                                                     <div class="pago-comprobante">
-                                                        <img src="<?= Html::encode($pago->comprobante_url) ?>" alt="Comprobante"
-                                                            onerror="this.parentElement.innerHTML='<div class=\'pago-comprobante-error\'><i class=\'fas fa-exclamation-triangle\'></i><p>Error al cargar la imagen</p></div>';">
+                                                        <?= Html::img(Yii::getAlias('@web') . $pago->comprobante_url, [
+                                                            'alt' => 'Comprobante',
+                                                            'onerror' => "this.parentElement.innerHTML='<div class=\'pago-comprobante-error\'><i class=\'fas fa-exclamation-triangle\'></i><p>Error al cargar la imagen</p></div>';",
+                                                        ]) ?>
                                                     </div>
                                                     <button class="btn-descargar-comprobante"
-                                                        onclick="descargarComprobante('<?= Html::encode($pago->comprobante_url) ?>', 'comprobante-pago-<?= $pago->id ?>')">
+                                                        onclick="descargarComprobante('<?= Yii::$app->request->baseUrl . Html::encode($pago->comprobante_url) ?>', 'comprobante-pago-<?= $pago->id ?>')">
                                                         <i class="fas fa-download me-2"></i>Descargar Comprobante de Pago
                                                     </button>
                                                 <?php else: ?>
@@ -1156,5 +1174,8 @@ $this->title = 'Detalles del Boleto: ' . Html::encode($boleto->codigo);
             });
     }
 
-
 </script>
+
+<?php if ($estadoActual === 'anulado'): ?>
+    <?= $this->render('_modal_aprobacion', ['boleto' => $boleto, 'rifa' => $rifa]) ?>
+<?php endif; ?>
